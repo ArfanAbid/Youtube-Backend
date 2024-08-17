@@ -62,14 +62,14 @@ userSchema.pre("save",async function(next){
     next()
 })
 
-// creating a custom method for password verification
+// creating a custom method for password verification used in login
 userSchema.methods.isPasswordCorrect=async function(password){
     return await bcrypt.compare(password,this.password)
 }
 
 
 // creating a custom method for token generation
-userSchema.methods.generateAccessToken=async function(){
+userSchema.methods.generateAccessToken= function(){
     return jwt.sign(
         {
             _id: this._id,
@@ -83,7 +83,7 @@ userSchema.methods.generateAccessToken=async function(){
         }
     )
 }
-userSchema.methods.generateRefreshToken=async function(){
+userSchema.methods.generateRefreshToken= function(){
     return jwt.sign(
         {
             _id: this._id,
