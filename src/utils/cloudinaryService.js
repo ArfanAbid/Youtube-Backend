@@ -26,5 +26,20 @@ const uploadOnCloudinary = async (file) => {
     }
 }
 
+// Actually we don't need this function at all just in controller function use  await cloudinary.uploader.destroy(publicId)
+// For easier understanding :)
+const deleteOnCloudinary = async (publicId) => {
+    try {
+        if(!publicId) return null;
+        // delete file on cloudinary
+        await cloudinary.uploader.destroy(publicId)
+        console.log(`File with public ID ${publicId} has been deleted.`);
 
-export {uploadOnCloudinary}
+    } catch (error) {
+        console.error("Error deleting file from Cloudinary:", error);
+        return null;
+    }
+}
+
+
+export {uploadOnCloudinary , deleteOnCloudinary}

@@ -2,7 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
 import {ApiResponse} from "../utils/ApiResponse.js";
 import {User} from "../models/user.model.js";
-import {uploadOnCloudinary} from "../utils/cloudinaryService.js";
+import {uploadOnCloudinary, deleteOnCloudinary} from "../utils/cloudinaryService.js";
 import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshToken = async(userId) => {
@@ -253,12 +253,26 @@ const updateUserAvatar=asyncHandler(async(req,res)=>{
     if(!avatarLocalPath){
         throw new ApiError(400, "Please provide avatar");
     }
-
+    const user=await User.findById(req.user?._id).select("-password");
+    if(!user){
+        throw new ApiError(404, "User not found");
+    }
+    // delete old image from cloudinary
+    if(user.avatar){
+        const oldPublicId=user.avatar.split('/').pop().split('.')[0]; // Extract public ID from URL
+        deleteOnCloudinary(oldPublicId);
+    }
+    // upload new image on cloudinary
     const avatar=uploadOnCloudinary(avatarLocalPath)
     if(!avatar.url){
         throw new ApiError(400, "Unable to upload avatar");
     }
 
+    user.avatar=avatar.url;
+    await user.save({validateBeforeSave:false});
+    
+    /* this can be done if i don't want to delete file and just update it
+    
     const user=await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -270,7 +284,7 @@ const updateUserAvatar=asyncHandler(async(req,res)=>{
             new:true,
         }
     ).select("-password");
-
+    */
     return res.status(200).json(new ApiResponse(200,user,"User Avatar Image updated successfully"));
 });
 
@@ -283,22 +297,23 @@ const updateUserCoverImage=asyncHandler(async(req,res)=>{
         throw new ApiError(400, "Please provide Cover Image");
     }
 
+    const user=await User.findById(req.user?._id).select("-password");
+    if(!user){
+        throw new ApiError(404, "User not found");
+    }
+    // delete old image from cloudinary
+    if(user.coverImage){
+        const oldPublicId=user.coverImage.split('/').pop().split('.')[0]; // Extract public ID from URL
+        deleteOnCloudinary(oldPublicId);
+    }
+    // upload new image on cloudinary
     const coverImage=uploadOnCloudinary(coverImageLocalPath)
     if(!coverImage.url){
         throw new ApiError(400, "Unable to upload coverImage");
     }
 
-    const user=await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set:{
-                coverImage:coverImage.url
-            }
-        },
-        {
-            new:true,
-        }
-    ).select("-password");
+    user.coverImage=coverImage.url;
+    await user.save({validateBeforeSave:false});
 
     return res.status(200).json(new ApiResponse(200,user,"User coverImage  updated successfully"));
 });
