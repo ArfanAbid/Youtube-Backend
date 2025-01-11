@@ -1,0 +1,41 @@
+version: "3.9"
+name: Backend
+services:
+  nodeapp:
+    # image: nodejs if u created image then use it otherwise use build
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: nodeService
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - MONGODB_URI=mongodb://admin:password@mongoDb
+    depends_on:
+      - mongoDb
+    volumes:
+      - yt-data:/data/db # For mongoDb default data saving is in /data/db  if u want to use other db then change it accordingly
+    develop:
+      watch:
+        - path: ./package.json
+          action: rebuild
+        - path: ./package-lock.json
+          action: rebuild  
+        - path: ./src
+          target: /usr/src/app # the path u specify in Dockerfile
+          action: sync  
+
+  mongoDb:
+    image: mongo
+    container_name: mongoService
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+
+volumes:
+  yt-data:
+    driver: local
+
